@@ -194,7 +194,7 @@ def make_study(
         meta.TransferSyntaxUID = ExplicitVRLittleEndian
         meta.ImplementationClassUID = _IMPLEMENTATION_UID
 
-        ds = FileDataset(str(dest / "placeholder"), {}, file_meta=meta, preamble=b"\0" * 128)
+        ds = FileDataset(str(dest / "series.dcm"), {}, file_meta=meta, preamble=b"\0" * 128)
         ds.SOPClassUID = CTImageStorage
         ds.SOPInstanceUID = sop_uid
         ds.StudyInstanceUID = study_uid

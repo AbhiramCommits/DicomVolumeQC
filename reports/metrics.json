@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-11-15T05:19:50+00:00",
-  "measured_code_commit": "9614a521aa2357f08096e621eaa350baa621ed8c",
+  "generated_at": "2026-11-15T05:22:48+00:00",
+  "measured_code_commit": "2896454df5532a7fa50bcad5703171d3308b6eb2",
   "corpus": {
     "series": 17,
     "patients": 8,
@@ -133,7 +133,7 @@
     "files": 18,
     "manifest_verified": true,
     "digest_ok": true,
-    "manifest_digest": "bfae06fc751253275db8bb937b265b571b408ef6ac1b6f3a71ecd45fb3d8c1d8",
+    "manifest_digest": "0dfde5e4bd6a9ac38f42517f4918d09e2c0b8ce16fc5f3cf940f84ab128d8b41",
     "config_hash": "fa05c3b2f7e74dd5d93f40c03c8ff44da5432cc619b5a3eb4126a1f808ff34d0"
   },
   "tests": {
@@ -142,7 +142,7 @@
     "coverage_fail_under": 85
   },
   "runtime": {
-    "pipeline_internal_seconds": 2.184745,
-    "end_to_end_wall_clock_seconds": 2.989
+    "pipeline_internal_seconds": 2.201878,
+    "end_to_end_wall_clock_seconds": 3.126
   }
 }
