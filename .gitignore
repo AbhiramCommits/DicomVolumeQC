@@ -11,6 +11,7 @@ htmlcov/
 
 # Generated fixture pixel data and masks (the generator is committed)
 data/fixtures/
+data/deid/
 
 # Generated pipeline outputs (reproducible with `dvqc run-all`)
 export/

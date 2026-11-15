@@ -11,7 +11,8 @@ import pydicom
 from pydicom.dataset import Dataset
 
 from dicomvolumeqc.errors import GeometryError
-from dicomvolumeqc.models import Finding, SeriesMeta, SeriesRef, Severity, Volume
+from dicomvolumeqc.geometry import validate_geometry
+from dicomvolumeqc.models import SeriesMeta, SeriesRef, Volume
 
 _SKIP_SUFFIXES = {
     ".nii",
@@ -247,116 +248,4 @@ def load_volume(series_ref: SeriesRef) -> Volume:
     )
 
 
-def validate_geometry(
-    meta: SeriesMeta,
-    *,
-    spacing_cv_tolerance: float = 0.05,
-    gap_factor: float = 1.5,
-    axial_tolerance_deg: float = 5.0,
-    min_slices: int = 3,
-) -> list[Finding]:
-    """Return structured geometry findings for one series.
-
-    The function never raises for a geometric defect; callers aggregate the
-    findings into the QC report and quarantine based on FAIL severity.
-    """
-    findings: list[Finding] = []
-    if meta.n_slices < min_slices:
-        findings.append(
-            Finding(
-                code="TOO_FEW_SLICES",
-                severity=Severity.FAIL,
-                message=f"series has {meta.n_slices} slices; at least {min_slices} are required",
-                observed=meta.n_slices,
-            )
-        )
-
-    cosines = np.asarray(meta.orientation_cosines, dtype=float)
-    if cosines.shape == (6,):
-        row = cosines[:3]
-        col = cosines[3:]
-        orthonormal = (
-            abs(float(np.linalg.norm(row)) - 1.0) <= 1e-3
-            and abs(float(np.linalg.norm(col)) - 1.0) <= 1e-3
-            and abs(float(np.dot(row, col))) <= 1e-3
-        )
-        if not orthonormal:
-            findings.append(
-                Finding(
-                    code="ORIENTATION_NOT_ORTHONORMAL",
-                    severity=Severity.FAIL,
-                    message="ImageOrientationPatient cosines are not orthonormal",
-                    observed=round(float(np.dot(row, col)), 6),
-                )
-            )
-        normal = np.cross(row, col)
-        norm = float(np.linalg.norm(normal))
-        if norm > 0:
-            angle = float(
-                np.degrees(np.arccos(np.clip(abs(normal[2] / norm), -1.0, 1.0)))
-            )
-            if angle > axial_tolerance_deg:
-                findings.append(
-                    Finding(
-                        code="NON_AXIAL",
-                        severity=Severity.FAIL,
-                        message=(
-                            f"slice normal is {angle:.2f} deg from axial; "
-                            f"tolerance is {axial_tolerance_deg:.2f} deg"
-                        ),
-                        observed=round(angle, 3),
-                    )
-                )
-
-    if np.isfinite(meta.slice_spacing_cv) and meta.slice_spacing_cv > spacing_cv_tolerance:
-        findings.append(
-            Finding(
-                code="NONUNIFORM_SPACING",
-                severity=Severity.FAIL,
-                message=(
-                    f"slice spacing CV {meta.slice_spacing_cv:.4f} exceeds "
-                    f"tolerance {spacing_cv_tolerance:.4f}"
-                ),
-                observed=round(meta.slice_spacing_cv, 6),
-            )
-        )
-
-    positions = np.asarray(meta.slice_positions, dtype=float)
-    if positions.size >= 2:
-        diffs = np.diff(positions)
-        positive = diffs[diffs > 1e-4]
-        if positive.size and meta.slice_spacing_median > 0:
-            max_gap = float(positive.max())
-            limit = gap_factor * meta.slice_spacing_median
-            if max_gap > limit:
-                findings.append(
-                    Finding(
-                        code="SLICE_GAP",
-                        severity=Severity.FAIL,
-                        message=(
-                            f"largest slice gap {max_gap:.3f} mm exceeds "
-                            f"{gap_factor:.2f}x median ({limit:.3f} mm)"
-                        ),
-                        observed=round(max_gap, 4),
-                    )
-                )
-
-    if meta.inconsistent_geometry:
-        findings.append(
-            Finding(
-                code="INCONSISTENT_GEOMETRY",
-                severity=Severity.FAIL,
-                message="Rows/Columns, PixelSpacing, or orientation differ across slices",
-                observed=True,
-            )
-        )
-    if meta.unreadable_count > 0:
-        findings.append(
-            Finding(
-                code="CORRUPT_FILES",
-                severity=Severity.FAIL,
-                message=f"{meta.unreadable_count} file(s) could not be decoded",
-                observed=meta.unreadable_count,
-            )
-        )
-    return findings
+__all__ = ["discover_series", "load_volume", "validate_geometry"]
