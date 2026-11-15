@@ -9,7 +9,7 @@ lint:
 	$(PY) -m ruff check .
 
 test:
-	$(PY) -m pytest -q
+	$(PY) -m pytest --cov=dicomvolumeqc --cov-report=term-missing --cov-fail-under=85 -q
 
 fixtures:
 	$(PY) -m dicomvolumeqc.cli fixtures --out data/fixtures

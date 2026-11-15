@@ -160,3 +160,78 @@ def test_export_refuses_quarantined_series(export_setup, tmp_path: Path) -> None
     prepared.append(preprocess_series(quarantined, config))
     with pytest.raises(QCFailure, match="quarantined"):
         export_dataset(prepared, export_setup["split"], report, config, tmp_path / "refused")
+
+
+def test_export_without_mask_writes_one_file(export_setup, tmp_path: Path) -> None:
+    import dataclasses
+
+    maskless = dataclasses.replace(export_setup["prepared"][0], mask=None)
+    result = export_dataset(
+        [maskless],
+        export_setup["split"],
+        export_setup["report"],
+        export_setup["config"],
+        tmp_path / "maskless",
+    )
+    assert result.files == 1
+    manifest = json.loads((tmp_path / "maskless" / "manifest.json").read_text())
+    assert manifest["records"][0]["mask_path"] is None
+    verification = verify_manifest(tmp_path / "maskless")
+    assert verification.ok
+    assert verification.files_checked == 1
+
+
+def test_export_rejects_unsafe_patient_component(export_setup, tmp_path: Path) -> None:
+    import dataclasses
+
+    prepared = dataclasses.replace(
+        export_setup["prepared"][0],
+        meta=dataclasses.replace(export_setup["prepared"][0].meta, patient_id="../evil"),
+    )
+    with pytest.raises(DvqcError, match="unsafe patient"):
+        export_dataset(
+            [prepared],
+            export_setup["split"],
+            export_setup["report"],
+            export_setup["config"],
+            tmp_path / "unsafe",
+        )
+
+
+def test_export_requires_qc_result(export_setup, tmp_path: Path) -> None:
+    import dataclasses
+
+    item = export_setup["prepared"][0]
+    report = dataclasses.replace(
+        export_setup["report"],
+        series=[s for s in export_setup["report"].series if s.series_uid != item.series_uid],
+    )
+    with pytest.raises(DvqcError, match="no QC result"):
+        export_dataset(
+            [item], export_setup["split"], report, export_setup["config"], tmp_path / "noqc"
+        )
+
+
+def test_export_requires_split_assignment(export_setup, tmp_path: Path) -> None:
+    from dicomvolumeqc.splits import SplitResult
+
+    empty_split = SplitResult(
+        assignments={},
+        patient_assignment={},
+        patients_per_split={"train": 0, "val": 0, "test": 0},
+        series_per_split={"train": 0, "val": 0, "test": 0},
+    )
+    with pytest.raises(DvqcError, match="no split assignment"):
+        export_dataset(
+            [export_setup["prepared"][0]],
+            empty_split,
+            export_setup["report"],
+            export_setup["config"],
+            tmp_path / "nosplit",
+        )
+
+
+def test_verify_manifest_handles_malformed_json(tmp_path: Path) -> None:
+    (tmp_path / "manifest.json").write_text("{not json")
+    with pytest.raises(DvqcError, match="could not read manifest"):
+        verify_manifest(tmp_path)

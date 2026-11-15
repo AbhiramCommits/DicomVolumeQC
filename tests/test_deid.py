@@ -186,3 +186,40 @@ def test_scan_unreadable_file_returns_leak(tmp_path: Path) -> None:
     leaks = scan_for_phi(path)
     assert len(leaks) == 1
     assert leaks[0].reason == "UNREADABLE_FILE"
+
+
+def test_deid_rejects_same_source_and_destination(tmp_path: Path) -> None:
+    source = tmp_path / "data"
+    source.mkdir()
+    with pytest.raises(DeidError, match="different directories"):
+        deidentify_dataset(source, source, "salt", tmp_path / "cw.csv")
+
+
+def test_deid_rejects_tree_without_dicoms(tmp_path: Path) -> None:
+    source = tmp_path / "only_text"
+    source.mkdir()
+    (source / "notes.txt").write_text("no dicom here")
+    with pytest.raises(DeidError, match="no DICOM"):
+        deidentify_dataset(source, tmp_path / "deid", "salt", tmp_path / "cw.csv")
+
+
+def test_deid_rejects_unreadable_dicom(tmp_path: Path) -> None:
+    source = tmp_path / "bad"
+    source.mkdir()
+    (source / "junk.dcm").write_bytes(b"not a dicom file")
+    with pytest.raises(DeidError, match="unreadable"):
+        deidentify_dataset(source, tmp_path / "deid", "salt", tmp_path / "cw.csv")
+
+
+def test_collect_patient_ids_skips_unreadable(tmp_path: Path) -> None:
+    (tmp_path / "junk.dcm").write_bytes(b"junk")
+    assert collect_patient_ids(tmp_path) == []
+
+
+def test_uid_pseudonym_is_stable() -> None:
+    from dicomvolumeqc.deid import uid_pseudonym
+
+    first = uid_pseudonym("1.2.3.4", "salt")
+    assert first == uid_pseudonym("1.2.3.4", "salt")
+    assert first.startswith("2.25.")
+    assert first != uid_pseudonym("1.2.3.5", "salt")

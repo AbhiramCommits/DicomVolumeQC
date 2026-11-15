@@ -77,12 +77,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    config = clone_config(load_config(args.config), args.seed)
     log_path = None
     if args.command == "run-all":
         log_path = Path(args.reports) / "run_all.txt"
     console = Console(log_path, quiet=args.json)
     try:
+        config = clone_config(load_config(args.config), args.seed)
         code, payload = dispatch(args, config, console)
         if args.json:
             print(json.dumps(payload, indent=2, default=str))

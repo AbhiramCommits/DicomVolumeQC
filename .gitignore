@@ -20,6 +20,8 @@ reports/qc_report.json
 reports/deid_crosswalk.csv
 reports/deid_report.json
 reports/pipeline_summary.json
+reports/coverage.json
+reports/final_wall_clock.txt
 
 # OS / editor noise
 .DS_Store

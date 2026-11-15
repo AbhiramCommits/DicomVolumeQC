@@ -237,3 +237,20 @@ def test_preprocess_respects_overridden_window(refs: list[SeriesRef]) -> None:
     prepared = preprocess_series(_ref(refs, "clean_axial_070"), config)
     assert prepared.image.spacing == pytest.approx((1.5, 1.5, 1.5), abs=1e-6)
     assert prepared.window_preset == "bone"
+
+
+def test_load_mask_missing_file_raises(refs: list[SeriesRef], tmp_path: Path) -> None:
+    meta = load_volume(_ref(refs, "clean_axial_080")).meta
+    with pytest.raises(GeometryError, match="could not read mask"):
+        load_mask(tmp_path / "missing.nii.gz", meta)
+
+
+def test_load_mask_rejects_2d_image(refs: list[SeriesRef], tmp_path: Path) -> None:
+    import SimpleITK as sitk
+
+    image = sitk.GetImageFromArray(np.zeros((8, 8), dtype=np.uint8))
+    path = tmp_path / "mask2d.nii.gz"
+    sitk.WriteImage(image, str(path))
+    meta = load_volume(_ref(refs, "clean_axial_080")).meta
+    with pytest.raises(GeometryError, match="not a 3D volume"):
+        load_mask(path, meta)

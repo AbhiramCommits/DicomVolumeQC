@@ -172,3 +172,51 @@ def test_series_result_serialization(report: QCReport) -> None:
     assert payload["codes"] == []
     assert payload["error"] is None
     json.dumps(payload)
+
+
+def test_non_binary_mask_warns(refs: list[SeriesRef], tmp_path: Path) -> None:
+    import shutil
+
+    import SimpleITK as sitk
+
+    source = _ref(refs, "clean_axial_080")
+    destination = tmp_path / "raw" / "PATX" / "series"
+    shutil.copytree(source.directory, destination)
+    mask_path = next(destination.glob("*.nii.gz"))
+    image = sitk.ReadImage(str(mask_path))
+    array = sitk.GetArrayFromImage(image)
+    array[array == 1] = 2
+    output = sitk.GetImageFromArray(array.astype("uint8"))
+    output.CopyInformation(image)
+    sitk.WriteImage(output, str(mask_path))
+    report = run_qc(discover_series(tmp_path / "raw"), load_config())
+    assert report.counts["warn"] == 1
+    assert report.series[0].verdict == Verdict.WARN
+    assert "MASK_NOT_BINARY" in report.series[0].codes
+
+
+def test_unreadable_mask_is_quarantined(refs: list[SeriesRef], tmp_path: Path) -> None:
+    import shutil
+
+    source = _ref(refs, "clean_axial_080")
+    destination = tmp_path / "raw" / "PATX" / "series"
+    shutil.copytree(source.directory, destination)
+    next(destination.glob("*.nii.gz")).write_bytes(b"not a nifti file")
+    report = run_qc(discover_series(tmp_path / "raw"), load_config())
+    assert report.counts["quarantine"] == 1
+    assert "MASK_UNREADABLE" in report.series[0].fail_codes
+
+
+def test_empty_volume_rule(refs: list[SeriesRef]) -> None:
+    import numpy as np
+
+    registry = RuleRegistry(load_config())
+    volume = load_volume(_ref(refs, "clean_axial_080"))
+    empty = dataclasses.replace(volume, array=np.zeros((0, 0, 0), dtype=np.float32))
+    assert [f.code for f in registry.run(volume.meta, empty)] == ["EMPTY_OR_CONSTANT_VOLUME"]
+
+
+def test_run_qc_handles_no_series() -> None:
+    report = run_qc([], load_config())
+    assert report.counts == {"total": 0, "pass": 0, "warn": 0, "quarantine": 0}
+    assert report.failures_by_rule == {}

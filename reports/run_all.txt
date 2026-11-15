@@ -15,7 +15,7 @@ qc        {"total": 17, "pass": 9, "warn": 0, "quarantine": 8}
 prepared  9                                                   
 export    9 records / 18 files                                
 verify    ok=True digest_ok=True                              
-runtime   6.40 s                                              
+runtime   2.18 s                                              
 
 split  patients  series
 -----  --------  ------
