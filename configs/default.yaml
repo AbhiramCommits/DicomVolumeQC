@@ -1,0 +1,21 @@
+# DicomVolumeQC default pipeline configuration.
+target_spacing_mm: 1.0
+window_preset: soft_tissue
+interpolator: linear
+
+qc:
+  min_slices: 3
+  spacing_cv_tolerance: 0.05
+  gap_factor: 1.5
+  axial_tolerance_deg: 5.0
+  hu_min: -1024
+  hu_max: 3071
+
+split:
+  train: 0.6
+  val: 0.2
+  test: 0.2
+
+seed: 20240101
+deid:
+  salt: dvqc-local-development-salt

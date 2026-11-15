@@ -103,4 +103,9 @@ class Volume:
 
     @property
     def extent(self) -> tuple[float, float, float]:
-        return tuple(s * sp for s, sp in zip(self.shape, self.spacing, strict=True))  # type: ignore[return-value]
+        """Physical field of view in (x, y, z) order, matching ``spacing``."""
+        return (
+            float(self.spacing[0] * self.shape[2]),
+            float(self.spacing[1] * self.shape[1]),
+            float(self.spacing[2] * self.shape[0]),
+        )
