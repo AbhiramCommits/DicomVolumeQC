@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Generated fixture pixel data and masks (the generator is committed)
+data/fixtures/
+
+# Generated pipeline outputs (reproducible with `dvqc run-all`)
+export/
+reports/qc_report.csv
+reports/qc_report.json
+reports/deid_crosswalk.csv
+reports/deid_report.json
+reports/pipeline_summary.json
+
+# OS / editor noise
+.DS_Store
+.idea/
+.vscode/
