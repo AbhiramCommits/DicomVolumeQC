@@ -24,3 +24,7 @@ class DeidError(DvqcError):
 
 class ConfigError(DvqcError):
     """Raised when a configuration file is missing, malformed, or invalid."""
+
+
+class SplitError(DvqcError):
+    """Raised when a patient-disjoint split cannot be constructed."""

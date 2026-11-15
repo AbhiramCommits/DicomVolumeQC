@@ -18,7 +18,6 @@ from dicomvolumeqc.models import SeriesRef
 from dicomvolumeqc.preprocess import (
     align_mask,
     apply_window,
-    describe_volume,
     load_mask,
     preprocess_series,
     resample_isotropic,
@@ -238,10 +237,3 @@ def test_preprocess_respects_overridden_window(refs: list[SeriesRef]) -> None:
     prepared = preprocess_series(_ref(refs, "clean_axial_070"), config)
     assert prepared.image.spacing == pytest.approx((1.5, 1.5, 1.5), abs=1e-6)
     assert prepared.window_preset == "bone"
-
-
-def test_describe_volume_is_serializable(refs: list[SeriesRef]) -> None:
-    description = describe_volume(load_volume(_ref(refs, "clean_axial_080")), "before")
-    assert description["shape"] == [12, 64, 64]
-    assert len(description["spacing_mm"]) == 3
-    assert json.dumps(description)

@@ -8,6 +8,7 @@ from dicomvolumeqc.errors import (
     DvqcError,
     GeometryError,
     QCFailure,
+    SplitError,
 )
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "DvqcError",
     "GeometryError",
     "QCFailure",
+    "SplitError",
     "__version__",
 ]

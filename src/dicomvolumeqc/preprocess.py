@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import SimpleITK as sitk
@@ -41,6 +40,8 @@ class PreparedVolume:
     mask_dice: float | None
     target_spacing_mm: float
     window_preset: str
+    source_shape: tuple[int, int, int] = (0, 0, 0)
+    source_spacing: tuple[float, float, float] = (0.0, 0.0, 0.0)
 
     @property
     def patient_id(self) -> str:
@@ -295,17 +296,6 @@ def preprocess_series(series_ref: SeriesRef, config: PreprocessConfig) -> Prepar
         mask_dice=mask_dice,
         target_spacing_mm=float(config.target_spacing_mm),
         window_preset=config.window_preset,
+        source_shape=raw.shape,
+        source_spacing=raw.spacing,
     )
-
-
-def describe_volume(volume: Volume, label: str = "volume") -> dict[str, Any]:
-    """Compact serializable description used by CLI summaries and tests."""
-    return {
-        "label": label,
-        "shape": list(volume.shape),
-        "spacing_mm": [round(float(v), 6) for v in volume.spacing],
-        "origin_mm": [round(float(v), 6) for v in volume.origin],
-        "dtype": str(volume.array.dtype),
-        "min": round(float(volume.array.min()), 6),
-        "max": round(float(volume.array.max()), 6),
-    }

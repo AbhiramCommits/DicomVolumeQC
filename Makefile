@@ -12,7 +12,7 @@ test:
 	$(PY) -m pytest -q
 
 fixtures:
-	$(PY) -c "from dicomvolumeqc.fixtures import build_fixture_set; arts = build_fixture_set('data/fixtures'); print(f'wrote {len(arts)} series for {len({a.patient_id for a in arts})} patients to data/fixtures')"
+	$(PY) -m dicomvolumeqc.cli fixtures --out data/fixtures
 
 pipeline:
 	$(PY) -m dicomvolumeqc.cli run-all --out data/fixtures --reports reports --export export
